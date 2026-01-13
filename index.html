@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garanti Servis Takibi | Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .sidebar { background: #0096d6; color: white; min-height: 100vh; position: fixed; width: 260px; z-index: 100; }
+        .main-content { margin-left: 260px; padding: 40px; }
+        .nav-link { color: rgba(255,255,255,0.8); margin-bottom: 12px; font-weight: 500; transition: 0.3s; }
+        .nav-link:hover, .nav-link.active { color: white; background: rgba(255,255,255,0.15); border-radius: 8px; }
+        .card-stat { border: none; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: 0.3s; }
+        .card-stat:hover { transform: translateY(-5px); }
+        .status-badge { font-size: 0.8rem; padding: 6px 12px; border-radius: 20px; font-weight: 600; }
+        .table-card { border-radius: 15px; border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+<div class="sidebar d-flex flex-column p-4">
+    <h3 class="text-center py-3 fw-bold border-bottom border-white border-opacity-25 mb-4">Garanti Servis</h3>
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item"><a href="index.html" class="nav-link active">🏠 Dashboard</a></li>
+        <li class="nav-item"><a href="yeni-kayit.html" class="nav-link">➕ Yeni Kayıt Aç</a></li>
+    </ul>
+    <div class="mt-auto">
+        <button onclick="excelIndir()" class="btn btn-success w-100 fw-bold py-2 shadow">📊 Excel Olarak İndir</button>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h2 class="fw-bold text-dark">Servis Durum Paneli</h2>
+        <span id="dateDisplay" class="badge bg-white text-dark shadow-sm p-2 px-3 border"></span>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-4">
+            <div class="card card-stat p-4 border-start border-primary border-5">
+                <small class="text-muted fw-bold">TOPLAM KAYIT</small>
+                <h2 id="statTotal" class="mb-0 mt-2 fw-bold text-primary">0</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-stat p-4 border-start border-warning border-5">
+                <small class="text-muted fw-bold">AÇIK / BEKLEYEN</small>
+                <h2 id="statPending" class="mb-0 mt-2 fw-bold text-warning">0</h2>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-stat p-4 border-start border-success border-5">
+                <small class="text-muted fw-bold">TAMAMLANAN</small>
+                <h2 id="statDone" class="mb-0 mt-2 fw-bold text-success">0</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card table-card">
+        <div class="card-header bg-white py-3 border-0">
+            <h5 class="mb-0 fw-bold">Cihaz Takip Listesi</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle" id="excelTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Kayıt Tarihi</th>
+                            <th>HP Case ID</th>
+                            <th>Model / Seri No</th>
+                            <th>Kullanıcı</th>
+                            <th>Durum</th>
+                            <th class="text-center">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketList">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function verileriYukle() {
+        const veriler = JSON.parse(localStorage.getItem('hpServisVerileri') || '[]');
+        const listBody = document.getElementById('ticketList');
+        listBody.innerHTML = '';
+        
+        let pending = 0; let done = 0;
+
+        veriler.forEach((item, index) => {
+            if(item.status === 'Tamamlandı') done++; else pending++;
+
+            let badgeClass = 'bg-primary';
+            if(item.status === 'Parça Bekliyor') badgeClass = 'bg-warning text-dark';
+            if(item.status === 'Tamamlandı') badgeClass = 'bg-success';
+            if(item.status === 'Teknisyen Atandı') badgeClass = 'bg-info text-dark';
+
+            listBody.innerHTML += `
+                <tr>
+                    <td class="ps-4">${item.date}</td>
+                    <td><span class="fw-bold text-primary">${item.caseId}</span></td>
+                    <td>${item.model} <br><small class="text-muted">S/N: ${item.sn}</small></td>
+                    <td>${item.user}</td>
+                    <td><span class="badge ${badgeClass} status-badge">${item.status}</span></td>
+                    <td class="text-center"><button onclick="kayitSil(${index})" class="btn btn-sm btn-outline-danger border-0">🗑️ Sil</button></td>
+                </tr>`;
+        });
+
+        document.getElementById('statTotal').innerText = veriler.length;
+        document.getElementById('statPending').innerText = pending;
+        document.getElementById('statDone').innerText = done;
+    }
+
+    function kayitSil(index) {
+        if(confirm('Seçili kaydı silmek istediğinize emin misiniz?')) {
+            let veriler = JSON.parse(localStorage.getItem('hpServisVerileri') || '[]');
+            veriler.splice(index, 1);
+            localStorage.setItem('hpServisVerileri', JSON.stringify(veriler));
+            verileriYukle();
+        }
+    }
+
+    function excelIndir() {
+        const table = document.getElementById("excelTable");
+        let html = table.outerHTML;
+        
+        // Excel için data tipi ve karakter seti
+        const url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "HP_Servis_Raporu_" + new Date().toLocaleDateString() + ".xls";
+        link.click();
+    }
+
+    document.getElementById('dateDisplay').innerText = "Bugün: " + new Date().toLocaleDateString('tr-TR');
+    window.onload = verileriYukle;
+</script>
+</body>
+</html>
