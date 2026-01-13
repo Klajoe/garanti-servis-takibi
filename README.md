@@ -1,0 +1,1 @@
+# garanti-servis-takibi
