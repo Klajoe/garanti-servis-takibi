@@ -3,175 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HP Servis Takip | Canlı Panel</title>
+    <title>Yeni Kayıt | Canlı Panel</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-        .sidebar { background: #007bb5; color: white; min-height: 100vh; position: fixed; width: 260px; z-index: 100; }
+        .sidebar { background: #007bb5; color: white; min-height: 100vh; position: fixed; width: 260px; }
         .main-content { margin-left: 260px; padding: 40px; }
-        .nav-link { color: rgba(255,255,255,0.8); margin-bottom: 12px; transition: 0.3s; }
+        .form-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .nav-link { color: rgba(255,255,255,0.8); margin-bottom: 12px; transition: 0.3s; padding: 10px 15px; display: block; text-decoration: none; }
         .nav-link:hover, .nav-link.active { color: white; background: rgba(255,255,255,0.15); border-radius: 8px; }
-        .card-stat { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .table-card { border-radius: 15px; border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.05); overflow: hidden; }
-        #loadingSpinner { display: block; margin: 50px auto; }
-        .btn-delete { font-size: 0.8rem; padding: 0.25rem 0.5rem; }
     </style>
 </head>
 <body>
 
 <div class="sidebar d-flex flex-column p-4">
     <h3 class="text-center py-3 fw-bold border-bottom border-white border-opacity-25 mb-4">HP Servis</h3>
-    <ul class="nav nav-pills flex-column mb-auto">
-        <li class="nav-item"><a href="index.html" class="nav-link active">🏠 Ortak Dashboard</a></li>
-        <li class="nav-item"><a href="yeni-kayit.html" class="nav-link">➕ Yeni Kayıt Ekle</a></li>
+    <ul class="nav nav-pills flex-column">
+        <li><a href="index.html" class="nav-link">🏠 Ortak Dashboard</a></li>
+        <li><a href="yeni-kayit.html" class="nav-link active">➕ Yeni Kayıt Ekle</a></li>
     </ul>
-    <div class="mt-auto">
-        <button onclick="excelIndir()" class="btn btn-success w-100 fw-bold py-2 shadow">📊 Excel Olarak İndir</button>
-    </div>
 </div>
 
 <div class="main-content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-dark">Canlı Servis Takip Listesi</h2>
-        <button onclick="verileriYukle()" class="btn btn-sm btn-outline-secondary">🔄 Verileri Yenile</button>
-    </div>
-
-    <div class="row mb-5 text-center">
-        <div class="col-md-4">
-            <div class="card card-stat p-3 border-start border-primary border-5">
-                <small class="text-muted fw-bold">TOPLAM KAYIT</small>
-                <h3 id="statTotal" class="fw-bold mb-0">0</h3>
+    <h2 class="fw-bold mb-4">Yeni Bulut Arıza Kaydı</h2>
+    <div class="form-card">
+        <form id="sheetForm" class="row g-4">
+            <div class="col-md-6">
+                <label class="fw-bold text-secondary">HP Case ID</label>
+                <input type="text" id="caseId" class="form-control form-control-lg border-0 bg-light" required>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card card-stat p-3 border-start border-warning border-5">
-                <small class="text-muted fw-bold">BEKLEYEN</small>
-                <h3 id="statPending" class="fw-bold mb-0">0</h3>
+            <div class="col-md-6">
+                <label class="fw-bold text-secondary">Seri Numarası</label>
+                <input type="text" id="sn" class="form-control form-control-lg border-0 bg-light" required>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card card-stat p-3 border-start border-success border-5">
-                <small class="text-muted fw-bold">TAMAMLANAN</small>
-                <h3 id="statDone" class="fw-bold mb-0">0</h3>
+            <div class="col-md-6">
+                <label class="fw-bold text-secondary">Cihaz Modeli</label>
+                <input type="text" id="model" class="form-control form-control-lg border-0 bg-light" required>
             </div>
-        </div>
-    </div>
-
-    <div class="card table-card">
-        <div id="loadingSpinner" class="spinner-border text-primary" role="status"></div>
-        <table class="table table-hover align-middle mb-0" id="data-table" style="display:none;">
-            <thead class="table-light">
-                <tr>
-                    <th class="ps-4">Tarih</th>
-                    <th>Case ID</th>
-                    <th>Cihaz / Seri No</th>
-                    <th>Kullanıcı</th>
-                    <th>Durum</th>
-                    <th>İşlem</th>
-                </tr>
-            </thead>
-            <tbody id="ticketList"></tbody>
-        </table>
+            <div class="col-md-6">
+                <label class="fw-bold text-secondary">Kullanıcı</label>
+                <input type="text" id="user" class="form-control form-control-lg border-0 bg-light" required>
+            </div>
+            <div class="col-12">
+                <label class="fw-bold text-secondary">Açıklama</label>
+                <textarea id="desc" class="form-control border-0 bg-light" rows="3"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="fw-bold text-secondary">Durum</label>
+                <select id="status" class="form-select form-select-lg border-0 bg-light">
+                    <option>Kayıt Açıldı</option>
+                    <option>Parça Bekliyor</option>
+                    <option>Tamamlandı</option>
+                </select>
+            </div>
+            
+            <div class="col-12 mt-5">
+                <button type="submit" id="saveBtn" class="btn btn-primary btn-lg px-5 shadow fw-bold">Buluta Gönder</button>
+                <a href="index.html" class="btn btn-outline-secondary btn-lg px-5 ms-3">İptal</a>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
     const DATA_KEY = 'hp-service-data';
 
-    function verileriKaydet(data) {
-        localStorage.setItem(DATA_KEY, JSON.stringify(data));
-    }
-
     function verileriGetir() {
         const data = localStorage.getItem(DATA_KEY);
         return data ? JSON.parse(data) : [];
     }
 
-    async function verileriYukle() {
-        document.getElementById('loadingSpinner').style.display = 'block';
-        document.getElementById('data-table').style.display = 'none';
+    function verileriKaydet(data) {
+        localStorage.setItem(DATA_KEY, JSON.stringify(data));
+    }
+
+    document.getElementById('sheetForm').addEventListener("submit", e => {
+        e.preventDefault();
+        
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        btn.innerText = "Kayıt İşleniyor...";
+
+        const yeniKayit = {
+            date: new Date().toLocaleDateString('tr-TR'),
+            caseId: document.getElementById('caseId').value,
+            sn: document.getElementById('sn').value,
+            model: document.getElementById('model').value,
+            user: document.getElementById('user').value,
+            desc: document.getElementById('desc').value,
+            status: document.getElementById('status').value,
+            timestamp: Date.now()
+        };
 
         try {
-            const data = verileriGetir();
+            const mevcutVeriler = verileriGetir();
+            mevcutVeriler.push(yeniKayit);
+            verileriKaydet(mevcutVeriler);
             
-            const listBody = document.getElementById('ticketList');
-            listBody.innerHTML = '';
-            
-            let pending = 0;
-            let done = 0;
-
-            data.forEach((item, index) => {
-                if(item.status === 'Tamamlandı') {
-                    done++;
-                } else {
-                    pending++;
-                }
-                
-                listBody.innerHTML += `
-                    <tr>
-                        <td class="ps-4 text-muted">${item.date}</td>
-                        <td class="fw-bold text-primary">${item.caseId}</td>
-                        <td>${item.model} <br><small class="text-muted">S/N: ${item.sn}</small></td>
-                        <td>${item.user}</td>
-                        <td><span class="badge ${item.status === 'Tamamlandı' ? 'bg-success' : 'bg-warning text-dark'}">${item.status}</span></td>
-                        <td><button onclick="kayitSil(${index})" class="btn btn-sm btn-danger btn-delete">Sil</button></td>
-                    </tr>`;
-            });
-
-            document.getElementById('statTotal').innerText = data.length;
-            document.getElementById('statPending').innerText = pending;
-            document.getElementById('statDone').innerText = done;
-            
-            document.getElementById('loadingSpinner').style.display = 'none';
-            document.getElementById('data-table').style.display = 'table';
-
-        } catch (error) {
-            console.error('Veri yükleme hatası:', error);
-            alert("Veriler yüklenemedi!");
+            alert('Kayıt başarıyla eklendi!');
+            window.location.href = 'index.html';
+        } catch(error) {
+            console.error('Kayıt hatası:', error);
+            alert('Kayıt eklenirken bir hata oluştu!');
+            btn.disabled = false;
+            btn.innerText = "Buluta Gönder";
         }
-    }
-
-    function kayitSil(index) {
-        if(confirm('Bu kaydı silmek istediğinizden emin misiniz?')) {
-            const data = verileriGetir();
-            data.splice(index, 1);
-            verileriKaydet(data);
-            verileriYukle();
-        }
-    }
-
-    function excelIndir() {
-        const data = verileriGetir();
-        
-        if(data.length === 0) {
-            alert('İndirilecek veri yok!');
-            return;
-        }
-
-        let excelContent = '<table border="1"><thead><tr><th>Tarih</th><th>Case ID</th><th>Seri No</th><th>Model</th><th>Kullanıcı</th><th>Açıklama</th><th>Durum</th></tr></thead><tbody>';
-        
-        data.forEach(item => {
-            excelContent += `<tr>
-                <td>${item.date}</td>
-                <td>${item.caseId}</td>
-                <td>${item.sn}</td>
-                <td>${item.model}</td>
-                <td>${item.user}</td>
-                <td>${item.desc || ''}</td>
-                <td>${item.status}</td>
-            </tr>`;
-        });
-        
-        excelContent += '</tbody></table>';
-        
-        const url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(excelContent);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "Servis_Raporu_" + new Date().toLocaleDateString('tr-TR').replace(/\./g, '-') + ".xls";
-        link.click();
-    }
-
-    window.onload = verileriYukle;
+    });
 </script>
 </body>
 </html>
