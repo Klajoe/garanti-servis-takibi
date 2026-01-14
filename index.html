@@ -14,6 +14,7 @@
         .card-stat { border: none; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .table-card { border-radius: 15px; border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.05); overflow: hidden; }
         #loadingSpinner { display: block; margin: 50px auto; }
+        .btn-delete { font-size: 0.8rem; padding: 0.25rem 0.5rem; }
     </style>
 </head>
 <body>
@@ -39,19 +40,19 @@
         <div class="col-md-4">
             <div class="card card-stat p-3 border-start border-primary border-5">
                 <small class="text-muted fw-bold">TOPLAM KAYIT</small>
-                <h3 id="statTotal" class="fw-bold mb-0">...</h3>
+                <h3 id="statTotal" class="fw-bold mb-0">0</h3>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card card-stat p-3 border-start border-warning border-5">
                 <small class="text-muted fw-bold">BEKLEYEN</small>
-                <h3 id="statPending" class="fw-bold mb-0">...</h3>
+                <h3 id="statPending" class="fw-bold mb-0">0</h3>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card card-stat p-3 border-start border-success border-5">
                 <small class="text-muted fw-bold">TAMAMLANAN</small>
-                <h3 id="statDone" class="fw-bold mb-0">...</h3>
+                <h3 id="statDone" class="fw-bold mb-0">0</h3>
             </div>
         </div>
     </div>
@@ -66,6 +67,7 @@
                     <th>Cihaz / Seri No</th>
                     <th>Kullanıcı</th>
                     <th>Durum</th>
+                    <th>İşlem</th>
                 </tr>
             </thead>
             <tbody id="ticketList"></tbody>
@@ -74,24 +76,36 @@
 </div>
 
 <script>
-   
-    const SHEETDB_URL = 'https://sheetdb.io/api/v1/f3656l8xl3ghe';
+    const DATA_KEY = 'hp-service-data';
+
+    function verileriKaydet(data) {
+        localStorage.setItem(DATA_KEY, JSON.stringify(data));
+    }
+
+    function verileriGetir() {
+        const data = localStorage.getItem(DATA_KEY);
+        return data ? JSON.parse(data) : [];
+    }
 
     async function verileriYukle() {
         document.getElementById('loadingSpinner').style.display = 'block';
         document.getElementById('data-table').style.display = 'none';
 
         try {
-            const response = await fetch(SHEETDB_URL);
-            const data = await response.json();
+            const data = verileriGetir();
             
             const listBody = document.getElementById('ticketList');
             listBody.innerHTML = '';
             
-            let pending = 0; let done = 0;
+            let pending = 0;
+            let done = 0;
 
-            data.forEach(item => {
-                if(item.status === 'Tamamlandı') done++; else pending++;
+            data.forEach((item, index) => {
+                if(item.status === 'Tamamlandı') {
+                    done++;
+                } else {
+                    pending++;
+                }
                 
                 listBody.innerHTML += `
                     <tr>
@@ -100,6 +114,7 @@
                         <td>${item.model} <br><small class="text-muted">S/N: ${item.sn}</small></td>
                         <td>${item.user}</td>
                         <td><span class="badge ${item.status === 'Tamamlandı' ? 'bg-success' : 'bg-warning text-dark'}">${item.status}</span></td>
+                        <td><button onclick="kayitSil(${index})" class="btn btn-sm btn-danger btn-delete">Sil</button></td>
                     </tr>`;
             });
 
@@ -111,16 +126,48 @@
             document.getElementById('data-table').style.display = 'table';
 
         } catch (error) {
-            alert("Veriler çekilemedi! API URL'nizi kontrol edin.");
+            console.error('Veri yükleme hatası:', error);
+            alert("Veriler yüklenemedi!");
+        }
+    }
+
+    function kayitSil(index) {
+        if(confirm('Bu kaydı silmek istediğinizden emin misiniz?')) {
+            const data = verileriGetir();
+            data.splice(index, 1);
+            verileriKaydet(data);
+            verileriYukle();
         }
     }
 
     function excelIndir() {
-        const table = document.getElementById("data-table");
-        const url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(table.outerHTML);
+        const data = verileriGetir();
+        
+        if(data.length === 0) {
+            alert('İndirilecek veri yok!');
+            return;
+        }
+
+        let excelContent = '<table border="1"><thead><tr><th>Tarih</th><th>Case ID</th><th>Seri No</th><th>Model</th><th>Kullanıcı</th><th>Açıklama</th><th>Durum</th></tr></thead><tbody>';
+        
+        data.forEach(item => {
+            excelContent += `<tr>
+                <td>${item.date}</td>
+                <td>${item.caseId}</td>
+                <td>${item.sn}</td>
+                <td>${item.model}</td>
+                <td>${item.user}</td>
+                <td>${item.desc || ''}</td>
+                <td>${item.status}</td>
+            </tr>`;
+        });
+        
+        excelContent += '</tbody></table>';
+        
+        const url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(excelContent);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "Servis_Raporu.xls";
+        link.download = "Servis_Raporu_" + new Date().toLocaleDateString('tr-TR').replace(/\./g, '-') + ".xls";
         link.click();
     }
 
